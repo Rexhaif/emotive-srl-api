@@ -1,9 +1,9 @@
 import transformers as tr
 import logging
 from rich.logging import RichHandler
-import numpy as np
-from timeit import repeat
-import torch
+import uvicorn
+from fastapi import FastAPI, APIRouter
+import argparse as ap
 
 logging.basicConfig(
     level=logging.INFO,
@@ -12,9 +12,33 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
+class PipelineAPI:
+
+    def __init__(self, model_name: str) -> None:
+        self.pipeline = tr.pipeline('token-classification', model=model_name, device="cpu", aggregation_strategy="simples")
+        self.router = APIRouter()
+        self.router.add_api_route("/predict", self.predict, methods=["POST"])
+        self.router.add_api_route("/health", self.health, methods=["GET"])
+
+    def predict(self, texts: list[str]) -> str:
+        return self.pipeline(texts)
+
+    def health(self) -> str:
+        return "OK"
+
 if __name__ == "__main__":
-    device = torch.device("cpu")
-    pipeline = tr.pipeline("token-classification", model=settings.model.name, device=device, aggregation_strategy='simple')
-    res = repeat('_ = pipeline("Мама расстроилась на мальчика")', globals=globals(), number=100, repeat=30)
-    res = list(map(lambda x: x / 100, res))
-    logger.info(f"Run time: {np.mean(res)} +- {np.std(res)}")
+
+    parser = ap.ArgumentParser(prog="pipeline")
+    parser.add_argument("--model", help="model name", default="Rexhaif/rubert-base-srl-seqlabeling")
+    parser.add_argument("--port", help="port", default=8000)
+    args: ap.Namespace = parser.parse_args()
+
+    uvicorn_log_config = uvicorn.config.LOGGING_CONFIG
+    del uvicorn_log_config["loggers"][""]
+
+    app = FastAPI()
+    api = PipelineAPI(args.model)
+    app.include_router(api.router)
+
+    uvicorn.run(app, log_config=uvicorn_log_config, port=args.port, host="0.0.0.0")
