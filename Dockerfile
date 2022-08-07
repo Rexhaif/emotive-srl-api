@@ -5,7 +5,8 @@ WORKDIR /srl
 
 ADD requirements.txt ./requirements.txt
 #RUN apt update && apt install -y --no-install-recommends build-essential && rm -rf /var/lib/apt/lists/*
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -U torch --extra-index-url https://download.pytorch.org/whl/cpu
 RUN python -c "from pymystem3 import Mystem; _ = Mystem()" # fetch mystem binary
 RUN python -c \
     "import transformers as tr; _ = tr.pipeline('token-classification', model='Rexhaif/rubert-base-srl-seqlabeling')" 

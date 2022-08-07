@@ -23,7 +23,6 @@ rich==12.5.1
 sniffio==1.2.0
 starlette==0.19.1
 tokenizers==0.12.1
-torch==1.12.1
 tqdm==4.64.0
 transformers==4.21.1
 typing_extensions==4.3.0
